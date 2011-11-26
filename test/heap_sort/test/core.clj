@@ -17,6 +17,7 @@
      (- end# start#)))
 
 (deftest first-faster
-  (let [rand-seq (shuffle (range 100000))]
-    (is (> (my-time (first (sort rand-seq)))
-           (my-time (first (heap-sort rand-seq)))))))
+  (let [rand-seq (shuffle (range 100000))
+        first-time (my-time (first (sort rand-seq)))
+        second-time (my-time (first (heap-sort rand-seq)))]
+    (is (> 1 (float (/ second-time first-time))))))

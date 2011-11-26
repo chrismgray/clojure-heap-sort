@@ -1,73 +1,94 @@
 (ns heap-sort.core)
 
 (defn- comp-max
-  ([comp x] x)
-  ([comp x y] (if (> 0 (comp x y)) x y))
-  ([comp x y & more]
+  ([^java.util.Comparator comp x] x)
+  ([^java.util.Comparator comp x y] (if (> 0 (comp x y)) x y))
+  ([^java.util.Comparator comp x y z] ; here for speed only
+     (if (> 0 (comp x y))
+       (if (> 0 (comp x z))
+         x
+         z)
+       (if (> 0 (comp y z))
+         y
+         z)))
+  ([^java.util.Comparator comp x y z & more]
      (second
       (reduce
        (fn [[comp x] y]
          (if (> 0 (comp x y))
            [comp x]
-           [comp y])) [comp (comp-max comp x y)] more))))
+           [comp y])) [comp (comp-max comp x y z)] more))))
 
 (defn- left-child
-  ([elt]
+  ([^Integer elt]
      (inc (* 2 elt)))
-  ([coll elt]
-     (coll (left-child elt))))
+  ([coll ^Integer elt]
+     (aget coll (left-child elt))))
 
 (defn- right-child
-  ([elt]
+  ([^Integer elt]
      (inc (inc (* 2 elt))))
-  ([coll elt]
-     (coll (right-child elt))))
+  ([coll ^Integer elt]
+     (aget coll (right-child elt))))
 
-(defn- left-child-exists? [coll elt]
-  (contains? coll (left-child elt)))
+(defn- ^Boolean left-child-exists?
+  {:inline (fn [coll elt len]
+             `(> ~len (left-child ~elt)))}
+  ([coll ^Integer elt ^Integer len]
+     (> len (left-child elt))))
 
-(defn- right-child-exists? [coll elt]
-  (contains? coll (right-child elt)))
+(defn- ^Boolean right-child-exists?
+  {:inline (fn [coll elt len]
+             `(> ~len (right-child ~elt)))}
+  ([coll ^Integer elt ^Integer len]
+     (> len (right-child elt))))
 
-(defn- exchange [coll e1 e2]
-  (-> coll
-      (assoc-in [e1] (coll e2))
-      (assoc-in [e2] (coll e1))))
+(defn- exchange [coll ^Integer e1 ^Integer e2]
+  (let [new-e1 (aget coll e2)
+        new-e2 (aget coll e1)]
+    (aset coll e1 new-e1)
+    (aset coll e2 new-e2)
+    coll))
 
-(defn- heap-fix [comp coll elt]
-  (cond
-   (and (left-child-exists? coll elt) (right-child-exists? coll elt))
-   (let [max-elt (comp-max #(comp (first %1) (first %2)) [(coll elt) elt] [(left-child coll elt) (left-child elt)] [(right-child coll elt) (right-child elt)])]
-     (if (= (second max-elt) elt)
-       coll
-       (recur comp (exchange coll elt (second max-elt)) (second max-elt))))
-   (left-child-exists? coll elt)
-   (let [max-elt (comp-max #(comp (first %1) (first %2)) [(coll elt) elt] [(left-child coll elt) (left-child elt)])]
-     (if (= (second max-elt) elt)
-       coll
-       (recur comp (exchange coll elt (second max-elt)) (second max-elt))))
-   :else
-   coll))
+(defn- heap-fix [^java.util.Comparator comp coll ^Integer elt ^Integer len]
+  (let [comp-fn #(comp (first %1) (first %2))]
+   (cond
+    (and (left-child-exists? coll elt len) (right-child-exists? coll elt len))
+    (let [max-elt (comp-max comp-fn [(aget coll elt) elt] [(left-child coll elt) (left-child elt)] [(right-child coll elt) (right-child elt)])]
+      (if (= (second max-elt) elt)
+        coll
+        (recur comp (exchange coll elt (second max-elt)) (second max-elt) len)))
+    (left-child-exists? coll elt len)
+    (let [max-elt (comp-max comp-fn [(aget coll elt) elt] [(left-child coll elt) (left-child elt)])]
+      (if (= (second max-elt) elt)
+        coll
+        (recur comp (exchange coll elt (second max-elt)) (second max-elt) len)))
+    :else
+    coll)))
 
-(defn pop-heap [comp heap]
-  [(first heap) (heap-fix comp (subvec (exchange heap 0 (dec (count heap))) 0 (dec (count heap))) 0)])
+(defn pop-heap [^java.util.Comparator comp heap ^Integer len]
+  [(first heap) (heap-fix comp (exchange heap 0 (dec len)) 0 (dec len))])
 
 (defn build-heap
   ([coll]
-     (build-heap compare (vec coll)))
-  ([comp coll]
-     (let [first-index (int (/ (count coll) 2))]
-       (second (reduce (fn [[comp coll] elt] [comp (heap-fix comp coll elt)]) [comp (vec coll)] (reverse (range (inc first-index))))))))
+     (build-heap compare coll))
+  ([^java.util.Comparator comp coll]
+     (let [len (count coll)
+           first-index (int (/ len 2))
+           a (to-array coll)]
+       (second
+        (reduce (fn [[comp coll] elt] [comp (heap-fix comp coll elt len)]) [comp (to-array coll)] (reverse (range (inc first-index))))))))
 
 (defn heap-sort
   ([coll]
      (heap-sort compare coll))
   ([^java.util.Comparator comp coll]
      (let [heap (build-heap comp coll)
-           helper (fn helper [heap]
-                    (if (empty? heap)
+           len (alength heap)
+           helper (fn helper [heap len]
+                    (if (= 0 len)
                       nil
-                      (let [[f hp] (pop-heap comp heap)]
-                        (lazy-seq (cons f (helper hp))))))]
-       (helper heap))))
+                      (let [[f hp] (pop-heap comp heap len)]
+                        (lazy-seq (cons f (helper hp (dec len)))))))]
+       (helper heap len))))
 

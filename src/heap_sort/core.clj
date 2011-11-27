@@ -84,7 +84,7 @@
      (heap-sort compare coll))
   ([^java.util.Comparator comp coll]
      (let [heap (build-heap comp coll)
-           len (alength heap)
+           len (count coll)
            helper (fn helper [^objects heap ^long len]
                     (if (= 0 len)
                       nil

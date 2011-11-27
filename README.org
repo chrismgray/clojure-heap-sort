@@ -12,3 +12,8 @@
   They also show that it is not much slower than =sort= for large
   inputs.
   
+* License
+
+    Copyright (C) 2011 Chris Gray.
+
+    Distributed under the same license as Clojure.

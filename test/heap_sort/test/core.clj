@@ -23,3 +23,9 @@
     (prn (float (/ second-time first-time)))
     (is (> 1 (float (/ second-time first-time))))))
 
+(deftest not-too-much-slower
+  (let [rand-seq (shuffle (range 10000))
+        first-time (my-time (vec (sort rand-seq)))
+        second-time (my-time (vec (heap-sort rand-seq)))]
+    (prn (float (/ second-time first-time)))
+    (is (> 5 (float (/ second-time first-time))))))

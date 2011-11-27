@@ -2,12 +2,13 @@
 * Heap sort
 
   This is an implementation of the =heap-sort= algorithm in pure
-  Clojure.  As opposed to the standard =sort= algorithm in Clojure, it
-  returns a lazy sequence of sorted elements.  Thus, it should be
-  theoretically faster than the standard =sort= algorithm in Clojure
-  if only a small number of elements from the start of the sorted
+  Clojure.  As opposed to the standard =sort= algorithm in Clojure
+  (which is inherited from Java), it returns a lazy sequence of sorted
+  elements.  Thus, it should be theoretically faster than =sort= if
+  only a small number of elements from the start of the sorted
   sequence are used.
 
-  As it is implemented (using Clojure vectors), it is not currently
-  faster than Clojure =sort=, even when using only the first element
-  of the sorted list.
+  Tests are given showing that this is the case for large inputs.
+  They also show that it is not much slower than =sort= for large
+  inputs.
+  

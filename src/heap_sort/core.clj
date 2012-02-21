@@ -105,7 +105,7 @@
 (defn heap-sort
   "Returns a lazy sorted sequence of the input sequence `coll`,
    optionally compared by the comparator `comp`.  Does a linear amount
-   of preprocessing, followed by O(\log n) work per element that is
+   of preprocessing, followed by O(log n) work per element that is
    taken from the sorted sequence.  Thus, this function has better
    performance characteristics than Clojure's standard `sort` function
    if only a few sorted elements are desired.  If all elements are
